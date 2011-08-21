@@ -134,6 +134,7 @@ package{
 		public var m_world:b2World;
 		public var m_bomb:b2Body;
 		public var m_mouseJoint:b2MouseJoint;
+		public var m_mouseAllowed:Boolean;
 		public var m_velocityIterations:int = 10;
 		public var m_positionIterations:int = 10;
 		public var m_timeStep:Number = 1.0/30.0;
@@ -165,8 +166,12 @@ package{
 		// Mouse Drag 
 		//======================
 		public function MouseDrag():void{
+			if (Input.mousePressed) {
+				m_mouseAllowed = true;
+			}
+			
 			// mouse press
-			if (Input.mouseDown && !m_mouseJoint){
+			if (Input.mouseDown && m_mouseAllowed && !m_mouseJoint){
 				
 				var body:b2Body = GetBodyAtMouse();
 				
@@ -186,6 +191,7 @@ package{
 			
 			// mouse release
 			if (!Input.mouseDown){
+				m_mouseAllowed = false;
 				if (m_mouseJoint)
 				{
 					m_world.DestroyJoint(m_mouseJoint);

@@ -33,15 +33,29 @@ import com.greensock.*;
 import com.greensock.easing.*;
 import flash.display.*;
 import flash.text.*;
+import net.flashpunk.graphics.*;
+import net.flashpunk.*;
 	
 	
 	
 	public class Game extends Test{
 		public var text:TextField;
+		[Embed(source="particle.png")]
+		public static var particleGfx: Class;
+		
+		public var particles: Vector.<Particle> = new Vector.<Particle>();
+		
+		public var bloodFirst: Particle = null;
+		
+		public var bloodImages: Vector.<Image> = new Vector.<Image>(8, true);
+		
+		public var bloodBuffer:BitmapData = new BitmapData(300, 300, true, 0);
+		
 		public function Game(){
 			text = new MyTextField(150, 100, "", TextFieldAutoSize.CENTER, 40);
 			
 			m_sprite.addChild(text);
+			m_sprite.addChild(new Bitmap(bloodBuffer));
 			
 			var circ:b2CircleShape; 
 			var box:b2PolygonShape;
@@ -245,6 +259,14 @@ import flash.text.*;
 			}
 			
 			m_world.SetContactListener(new ContactListener(this));
+			
+			for (i = 0; i < bloodImages.length; i++) {
+				bloodImages[i] = new Image(particleGfx);
+				bloodImages[i].color = 0xFF0000;
+				bloodImages[i].alpha = 0.2 * (bloodImages.length - i) / Number(bloodImages.length);
+				//bloodImages[i].scale = (bloodImages.length - i) / Number(bloodImages.length);
+				bloodImages[i].x = bloodImages[i].y = -bloodImages[i].width * 0.5;
+			}
 		}
 		
 		public var timer:int = 60;
@@ -253,7 +275,7 @@ import flash.text.*;
 		
 		public override function Update():void {
 			if (dead) {
-				text.text = swords.length + "\nR to retry";
+				text.text = swordCount + "\nR to retry";
 				m_world.DrawDebugData();
 				return;
 			}
@@ -267,6 +289,69 @@ import flash.text.*;
 			}
 			
 			timer--;
+			
+			
+			bloodBuffer.fillRect(bloodBuffer.rect, 0);
+			
+			for (var i:int = 0; i < 4; i++) {
+				bloodFirst = Particle.create(bloodFirst, 150, 150);
+				bloodFirst.dx = Math.random()*2-1;
+				bloodFirst.dy = Math.random()*2-1;
+			}
+			
+			var p:Particle;
+			
+			p = bloodFirst;
+			while(p) {
+				p.age += 1;
+				
+				p.x += p.dx;
+				p.y += p.dy;
+				
+				if (p.x < -10 || p.x > 310 || p.y < -10 || p.y > 310 || p.age > 199) {
+					var next: Particle = p.next;
+					
+					if (p == bloodFirst) {
+						bloodFirst = next;
+					}
+					
+					{
+						if (p.previous)
+							p.previous.next = p.next;
+						
+						if (p.next)
+							p.next.previous = p.previous;
+						
+						p.next = Particle.recycleFirst;
+						Particle.recycleFirst = p;
+						
+						p.previous = null;
+					}
+					
+					//Particle.recycle(p);
+					
+					p = next;
+					continue;
+				}
+				
+				//if (p.x < 0 || p.x > 640) { continue; }
+				
+				/*if (p.y < 240-h[int(p.x*0.1)]) {
+					p.dy += 0.5;
+				} else {
+					p.dx *= 1.0 - Math.min(0.9, 0.01*p.dx*p.dx)*Math.random();
+					p.dy *= 1.0 - Math.min(0.9, 0.01*p.dy*p.dy)*Math.random();
+				}*/
+				
+				FP.point.x = p.x //+ waterImage.x;
+				FP.point.y = p.y //+ waterImage.y;
+				
+				//bloodImages[int(p.age / 25)].render(FP.point, FP.camera);
+				
+				bloodBuffer.copyPixels(bloodImages[int(p.age / 25)]._buffer, bloodImages[int(p.age / 25)]._bufferRect, FP.point, null, null, true);
+				
+				p = p.next;
+			}
 		}
 		
 		public function addSword():void {
@@ -296,7 +381,16 @@ import flash.text.*;
 			
 			var length:Number = 1 + Math.random()*3;
 			
-			var polygon:b2PolygonShape = b2PolygonShape.AsOrientedBox(length, 0.1, new b2Vec2(), angle);
+			//var polygon:b2PolygonShape = b2PolygonShape.AsOrientedBox(length, 0.1, new b2Vec2(), angle);
+			var A:b2Mat22 = b2Mat22.FromAngle(angle);
+			
+			function v(x:Number, y:Number):b2Vec2{
+				return new b2Vec2(A.col1.x * x + A.col2.x * y, A.col1.y * x + A.col2.y * y);
+			}
+			
+			var verts:Array = [v(-length, -0.2), v(length-0.4, -0.2), v(length, 0), v(length-0.4, 0.2), v(-length, 0.2)];
+			
+			var polygon:b2PolygonShape = b2PolygonShape.AsArray(verts, verts.length);
 			var filter:b2FilterData = new b2FilterData;
 			filter.categoryBits = 0x0002;
 			filter.maskBits = 0x0001;
@@ -316,10 +410,10 @@ import flash.text.*;
 				
 				body = m_world.CreateBody(bd);
 			
-				var polygon:b2PolygonShape = b2PolygonShape.AsOrientedBox(length, 0.1, new b2Vec2(), angle);
 				var fixture:b2Fixture = body.CreateFixture2(polygon);
 				
 				swords.push(fixture);
+				swordCount++;
 				
 				var t:Object = {p: 0};
 				
@@ -334,12 +428,31 @@ import flash.text.*;
 				}
 				
 				TweenLite.to(t, 0.5, {p: 1, ease: Quad.easeIn, onUpdate: update, onComplete: function ():void {
-					TweenLite.to(t, 2, {p: 0, ease: Quad.easeOut, delay: 10, onUpdate: update});
+					if (dead) return;
+					TweenLite.to(t, 2, {p: 0, ease: Quad.easeOut, delay: 10, onUpdate: update, onComplete: function ():void {
+						if (dead) return;
+						remove(swords, fixture);
+						m_world.DestroyBody(body);
+					}});
 				}});
 			});
 		}
 		
+		public static function remove(array:*, toRemove:*):Boolean
+		{
+			var i:int = array.indexOf(toRemove);
+			
+			if (i >= 0) {
+				array.splice(i, 1);
+			
+				return true;
+			} else {
+				return false;
+			}
+		}
+		
 		public var swords:Array = [];
+		public var swordCount:int = 0;
 	}
 	
 }
@@ -364,12 +477,34 @@ class ContactListener extends b2ContactListener
 	{
 		var fixtureA:b2Fixture = contact.GetFixtureA();
 		var fixtureB:b2Fixture = contact.GetFixtureB();
-		
+
 		var swords:Array = test.swords;
 		
-		if (swords.indexOf(fixtureA) == -1 && swords.indexOf(fixtureB) == -1)
+		if (swords.indexOf(fixtureA) == -1 && swords.indexOf(fixtureB) == -1) {
 			return;
+		}
 			
+
+		var manifold:b2WorldManifold = new b2WorldManifold();
+		contact.GetWorldManifold(manifold);
+		
+		var n1:b2Vec2 = manifold.m_normal.Copy();
+		var n2:b2Vec2 = manifold.m_normal.Copy();
+		
+		n1.Multiply(-20);
+		n2.Multiply(20);
+		
+		fixtureA.GetBody().ApplyImpulse(n1, manifold.m_points[0]);
+		fixtureB.GetBody().ApplyImpulse(n2, manifold.m_points[0]);
+	
+		
+		if (test.m_mouseJoint) {
+			test.m_world.DestroyJoint(test.m_mouseJoint);
+			test.m_mouseJoint = null;
+			test.m_mouseAllowed = false;
+		}
+	
+		
 		test.dead = true;
 	}
 }

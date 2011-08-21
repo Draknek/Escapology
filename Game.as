@@ -41,7 +41,7 @@ import net.flashpunk.*;
 	
 	public class Game extends Test{
 		public var text:TextField;
-		[Embed(source="particle.png")]
+		[Embed(source="images/blood.png")]
 		public static var particleGfx: Class;
 		
 		public var particles: Vector.<Particle> = new Vector.<Particle>();
@@ -356,11 +356,14 @@ import net.flashpunk.*;
 			m_world.SetContactListener(new ContactListener(this));
 			
 			for (i = 0; i < bloodImages.length; i++) {
-				bloodImages[i] = new Image(particleGfx);
+				bloodImages[i] = new Spritemap(particleGfx, 32, 32);
 				bloodImages[i].color = 0xFF0000;
 				bloodImages[i].alpha = 0.2 * (bloodImages.length - i) / Number(bloodImages.length);
+				Spritemap(bloodImages[i]).frame = 2;
 				//bloodImages[i].scale = (bloodImages.length - i) / Number(bloodImages.length);
-				bloodImages[i].x = bloodImages[i].y = -bloodImages[i].width * 0.5;
+				//bloodImages[i].x = bloodImages[i].y = -bloodImages[i].width * 0.5;
+				
+				bloodImages[i].centerOO();
 			}
 			
 			bloodOffset.x = -bloodImages[0].width*0.5;
@@ -394,9 +397,13 @@ import net.flashpunk.*;
 			
 			m_sprite.addChild(swordLayer);
 			
-			m_sprite.addChild(new Bitmap(bloodBuffer));
-			
 			updatePositions();
+			
+			var tmp:Bitmap = new Bitmap(bloodBuffer);
+			
+			//tmp.alpha = 0.8;
+			
+			m_sprite.addChild(tmp);
 			
 			//m_sprite.addChild(dbgSprite);
 			
@@ -404,7 +411,7 @@ import net.flashpunk.*;
 			
 		}
 		
-		public var timer:int = 60;
+		public var timer:int = 0;
 		
 		public var dead:Boolean = false;
 		
@@ -444,6 +451,7 @@ import net.flashpunk.*;
 		public function updateBlood ():void
 		{
 			bloodBuffer.colorTransform(bloodBufferRect, colorTransform);
+			//bloodBuffer.fillRect(bloodBufferRect, 0);
 			
 			var pos:b2Vec2;
 			var vel:b2Vec2;
@@ -452,9 +460,9 @@ import net.flashpunk.*;
 				pos = spawner.body.GetWorldPoint(spawner.position);
 				pos.Multiply(m_physScale*2);
 				vel = spawner.body.GetLinearVelocityFromLocalPoint(spawner.position);
-				vel.Multiply(-0.05);
-				vel.x += Math.random()*2-1;
-				vel.y += Math.random()*2-1;
+				vel.Multiply(-0.01 - Math.random()*0.1)
+				vel.x += Math.random()*0.5-0.25;
+				vel.y += Math.random()*0.5-0.25;
 				
 				var count:int = Math.random()*3;
 				
@@ -474,7 +482,7 @@ import net.flashpunk.*;
 				p.x += p.dx;
 				p.y += p.dy;
 				
-				if (p.x < -10 || p.x > 310 || p.y < -10 || p.y > 310 || p.age > 79) {
+				if (p.x < -10 || p.x > 310 || p.y < -10 || p.y > 310 || p.age > 39) {
 					var next: Particle = p.next;
 					
 					if (p == bloodFirst) {
@@ -512,10 +520,18 @@ import net.flashpunk.*;
 				p.dx *= 0.99;
 				p.dy *= 0.99;
 				
-				FP.point.x = p.x + bloodOffset.x;
-				FP.point.y = p.y + bloodOffset.y;
+				FP.point.x = p.x //+ bloodOffset.x;
+				FP.point.y = p.y //+ bloodOffset.y;
 				
-				bloodBuffer.copyPixels(bloodImages[int(p.age / 10)]._buffer, bloodImages[int(p.age / 10)]._bufferRect, FP.point, null, null, true);
+				//bloodBuffer.copyPixels(bloodImages[int(p.age / 5)]._buffer, bloodImages[int(p.age / 10)]._bufferRect, FP.point, null, null, true);
+				
+				i = p.age/5;
+				
+				//bloodImages[i].angle = p.age*5;
+				//bloodImages[i].scale = (p.age < 20) ? 1 + p.age *0.125 : (40 - p.age) * 0.125;
+				bloodImages[i].alpha = 1.0 - p.age / 40;
+				
+				bloodImages[i].render(bloodBuffer, FP.point, FP.zero);
 				
 				p = p.next;
 			}

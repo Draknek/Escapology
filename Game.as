@@ -32,6 +32,7 @@ import General.*
 import com.greensock.*;
 import com.greensock.easing.*;
 import flash.display.*;
+import flash.geom.*;
 import flash.text.*;
 import net.flashpunk.graphics.*;
 import net.flashpunk.*;
@@ -48,14 +49,73 @@ import net.flashpunk.*;
 		public var bloodFirst: Particle = null;
 		
 		public var bloodImages: Vector.<Image> = new Vector.<Image>(8, true);
+		public var bloodOffset:Point = new Point;
 		
 		public var bloodBuffer:BitmapData = new BitmapData(300, 300, true, 0);
+		public var bloodBufferRect:Rectangle = new Rectangle(0, 0, 300, 300);
+		public var colorTransform: ColorTransform = new ColorTransform(1, 1, 1, 0.97);
+		
+		public static var borderSize:Number = 10;
+		
+		public var swordLayer:Sprite = new Sprite;
+		
+		[Embed(source="images/head.png")] public static var HEAD: Class;
+		[Embed(source="images/torso1.png")] public static var TORSO1: Class;
+		[Embed(source="images/torso2.png")] public static var TORSO2: Class;
+		[Embed(source="images/torso3.png")] public static var TORSO3: Class;
+		[Embed(source="images/upperarm.png")] public static var UPPERARM: Class;
+		[Embed(source="images/lowerarm.png")] public static var LOWERARM: Class;
+		[Embed(source="images/upperleg.png")] public static var UPPERLEG: Class;
+		[Embed(source="images/lowerleg.png")] public static var LOWERLEG: Class;
+		[Embed(source="images/handL.png")] public static var HANDL: Class;
+		[Embed(source="images/handR.png")] public static var HANDR: Class;
+		
+		public var limbs:Array = [];
+		
+		private function makeLimbImage(c:Class, body:b2Body, scale:Number):void
+		{
+			var sprite:Sprite = new Sprite;
+			var bitmap:Bitmap = new c;
+			bitmap.x = -bitmap.width*0.5;
+			bitmap.y = -bitmap.height*0.5;
+			sprite.scaleX = sprite.scaleY = scale;
+			bitmap.smoothing = true;
+			sprite.addChild(bitmap);
+			
+			m_sprite.addChild(sprite);
+			
+			limbs.push(body);
+			
+			body.SetUserData(sprite);
+		}
+		
+		private function makeSwordImage(verts:Array, body:b2Body):void
+		{
+			var scale:Number = m_physScale*2;
+			
+			var s:Shape = new Shape;
+			
+			s.x = s.y = -10000;
+			
+			s.graphics.lineStyle(0x0);
+			s.graphics.beginFill(0xededed);
+			s.graphics.moveTo(verts[0].x*scale, verts[0].y*scale);
+			
+			for (var i:int = 1; i < verts.length; i++) {
+				s.graphics.lineTo(verts[i].x*scale, verts[i].y*scale);
+			}
+			
+			s.graphics.endFill();
+			
+			swordLayer.addChild(s);
+			
+			limbs.push(body);
+			
+			body.SetUserData(s);
+		}
 		
 		public function Game(){
-			text = new MyTextField(150, 100, "", TextFieldAutoSize.CENTER, 40);
-			
-			m_sprite.addChild(text);
-			m_sprite.addChild(new Bitmap(bloodBuffer));
+			text = new MyTextField(150, 50, "", TextFieldAutoSize.CENTER, 80);
 			
 			var circ:b2CircleShape; 
 			var box:b2PolygonShape;
@@ -89,6 +149,8 @@ import net.flashpunk.*;
 					//head.ApplyImpulse(new b2Vec2(Math.random() * 100 - 50, Math.random() * 100 - 50), head.GetWorldCenter());
 				//}
 				
+				fixtureDef.filter.groupIndex = -3;
+				
 				// Torso1
 				box = new b2PolygonShape();
 				box.SetAsBox(15 / m_physScale, 10 / m_physScale);
@@ -121,16 +183,18 @@ import net.flashpunk.*;
 				box = new b2PolygonShape();
 				box.SetAsBox(18 / m_physScale, 6.5 / m_physScale);
 				fixtureDef.shape = box;
-				bd.position.Set((startX - 30) / m_physScale, (startY + 20) / m_physScale);
+				bd.position.Set((startX - 20) / m_physScale, (startY + 25) / m_physScale);
 				var upperArmL:b2Body = m_world.CreateBody(bd);
 				upperArmL.CreateFixture(fixtureDef);
 				// R
 				box = new b2PolygonShape();
 				box.SetAsBox(18 / m_physScale, 6.5 / m_physScale);
 				fixtureDef.shape = box;
-				bd.position.Set((startX + 30) / m_physScale, (startY + 20) / m_physScale);
+				bd.position.Set((startX + 20) / m_physScale, (startY + 25) / m_physScale);
 				var upperArmR:b2Body = m_world.CreateBody(bd);
 				upperArmR.CreateFixture(fixtureDef);
+				
+				fixtureDef.filter.groupIndex = 2;
 				
 				// LowerArm
 				fixtureDef.density = 1.0;
@@ -140,16 +204,35 @@ import net.flashpunk.*;
 				box = new b2PolygonShape();
 				box.SetAsBox(17 / m_physScale, 6 / m_physScale);
 				fixtureDef.shape = box;
-				bd.position.Set((startX - 57) / m_physScale, (startY + 20) / m_physScale);
+				bd.position.Set((startX - 47) / m_physScale, (startY + 25) / m_physScale);
 				var lowerArmL:b2Body = m_world.CreateBody(bd);
 				lowerArmL.CreateFixture(fixtureDef);
 				// R
 				box = new b2PolygonShape();
 				box.SetAsBox(17 / m_physScale, 6 / m_physScale);
 				fixtureDef.shape = box;
-				bd.position.Set((startX + 57) / m_physScale, (startY + 20) / m_physScale);
+				bd.position.Set((startX + 47) / m_physScale, (startY + 25) / m_physScale);
 				var lowerArmR:b2Body = m_world.CreateBody(bd);
 				lowerArmR.CreateFixture(fixtureDef);
+				
+				// Hand
+				fixtureDef.density = 1.0;
+				fixtureDef.friction = 0.4;
+				fixtureDef.restitution = 0.1;
+				// L
+				box = new b2PolygonShape();
+				box.SetAsBox(6 / m_physScale, 4 / m_physScale);
+				fixtureDef.shape = box;
+				bd.position.Set((startX - 64) / m_physScale, (startY + 25) / m_physScale);
+				var handL:b2Body = m_world.CreateBody(bd);
+				handL.CreateFixture(fixtureDef);
+				// R
+				box = new b2PolygonShape();
+				box.SetAsBox(6 / m_physScale, 4 / m_physScale);
+				fixtureDef.shape = box;
+				bd.position.Set((startX + 64) / m_physScale, (startY + 25) / m_physScale);
+				var handR:b2Body = m_world.CreateBody(bd);
+				handR.CreateFixture(fixtureDef);
 				
 				// UpperLeg
 				fixtureDef.density = 1.0;
@@ -203,24 +286,36 @@ import net.flashpunk.*;
 				// L
 				jd.lowerAngle = -85 / (180/Math.PI);
 				jd.upperAngle = 130 / (180/Math.PI);
-				jd.Initialize(torso1, upperArmL, new b2Vec2((startX - 18) / m_physScale, (startY + 20) / m_physScale));
+				jd.Initialize(torso1, upperArmL, new b2Vec2((startX - 8) / m_physScale, (startY + 25) / m_physScale));
 				m_world.CreateJoint(jd);
 				// R
 				jd.lowerAngle = -130 / (180/Math.PI);
 				jd.upperAngle = 85 / (180/Math.PI);
-				jd.Initialize(torso1, upperArmR, new b2Vec2((startX + 18) / m_physScale, (startY + 20) / m_physScale));
+				jd.Initialize(torso1, upperArmR, new b2Vec2((startX + 8) / m_physScale, (startY + 25) / m_physScale));
 				m_world.CreateJoint(jd);
 				
 				// Lower arm to upper arm
 				// L
 				jd.lowerAngle = -130 / (180/Math.PI);
 				jd.upperAngle = 10 / (180/Math.PI);
-				jd.Initialize(upperArmL, lowerArmL, new b2Vec2((startX - 45) / m_physScale, (startY + 20) / m_physScale));
+				jd.Initialize(upperArmL, lowerArmL, new b2Vec2((startX - 35) / m_physScale, (startY + 25) / m_physScale));
 				m_world.CreateJoint(jd);
 				// R
 				jd.lowerAngle = -10 / (180/Math.PI);
 				jd.upperAngle = 130 / (180/Math.PI);
-				jd.Initialize(upperArmR, lowerArmR, new b2Vec2((startX + 45) / m_physScale, (startY + 20) / m_physScale));
+				jd.Initialize(upperArmR, lowerArmR, new b2Vec2((startX + 35) / m_physScale, (startY + 25) / m_physScale));
+				m_world.CreateJoint(jd);
+				
+				// Lower arm to hand
+				// L
+				jd.lowerAngle = -10 / (180/Math.PI);
+				jd.upperAngle = 10 / (180/Math.PI);
+				jd.Initialize(handL, lowerArmL, new b2Vec2((startX - 64) / m_physScale, (startY + 25) / m_physScale));
+				m_world.CreateJoint(jd);
+				// R
+				jd.lowerAngle = -10 / (180/Math.PI);
+				jd.upperAngle = 10 / (180/Math.PI);
+				jd.Initialize(handR, lowerArmR, new b2Vec2((startX + 64) / m_physScale, (startY + 25) / m_physScale));
 				m_world.CreateJoint(jd);
 				
 				// Shoulders/stomach
@@ -267,13 +362,66 @@ import net.flashpunk.*;
 				//bloodImages[i].scale = (bloodImages.length - i) / Number(bloodImages.length);
 				bloodImages[i].x = bloodImages[i].y = -bloodImages[i].width * 0.5;
 			}
+			
+			bloodOffset.x = -bloodImages[0].width*0.5;
+			bloodOffset.y = -bloodImages[0].height*0.5;
+			
+			var wallLayer:Sprite = new Sprite;
+			
+			wallLayer.graphics.lineStyle();
+			wallLayer.graphics.beginFill(0x0);
+			wallLayer.graphics.drawRect(0, 0, 10, 300);
+			wallLayer.graphics.drawRect(290, 0, 10, 300);
+			wallLayer.graphics.drawRect(10, 0, 280, 10);
+			wallLayer.graphics.drawRect(10, 290, 280, 10);
+			
+			m_sprite.addChild(wallLayer);
+			
+			makeLimbImage(HEAD, head, 50 / 110);
+			makeLimbImage(UPPERARM, upperArmR, 25 / 50);
+			makeLimbImage(UPPERARM, upperArmL, 25 / 50);
+			makeLimbImage(LOWERARM, lowerArmR, 25 / 50);
+			makeLimbImage(LOWERARM, lowerArmL, 25 / 50);
+			makeLimbImage(UPPERLEG, upperLegR, 25 / 50);
+			makeLimbImage(UPPERLEG, upperLegL, 25 / 50);
+			makeLimbImage(LOWERLEG, lowerLegR, 25 / 50);
+			makeLimbImage(LOWERLEG, lowerLegL, 25 / 50);
+			makeLimbImage(TORSO1, torso1, 40 / 50);
+			makeLimbImage(TORSO2, torso2, 40 / 50);
+			makeLimbImage(TORSO3, torso3, 40 / 50);
+			makeLimbImage(HANDL, handR, 0.75);
+			makeLimbImage(HANDR, handL, 0.75);
+			
+			m_sprite.addChild(swordLayer);
+			
+			m_sprite.addChild(new Bitmap(bloodBuffer));
+			
+			updatePositions();
+			
+			//m_sprite.addChild(dbgSprite);
+			
+			m_sprite.addChild(text);
+			
 		}
 		
 		public var timer:int = 60;
 		
 		public var dead:Boolean = false;
 		
+		public function updatePositions ():void
+		{
+			for each (var b:b2Body in limbs) {
+				var p:b2Vec2 = b.GetPosition();
+				var image:DisplayObject = b.GetUserData();
+				image.x = p.x * m_physScale*2;
+				image.y = p.y * m_physScale*2;
+				image.rotation = b.GetAngle() * 180 / Math.PI;
+			}
+		}
+		
 		public override function Update():void {
+			updateBlood();
+			
 			if (dead) {
 				text.text = swordCount + "\nR to retry";
 				m_world.DrawDebugData();
@@ -282,6 +430,8 @@ import net.flashpunk.*;
 			
 			super.Update();
 			
+			updatePositions();
+			
 			if (timer < 0){
 				addSword();
 				
@@ -289,14 +439,30 @@ import net.flashpunk.*;
 			}
 			
 			timer--;
+		}
+		
+		public function updateBlood ():void
+		{
+			bloodBuffer.colorTransform(bloodBufferRect, colorTransform);
 			
+			var pos:b2Vec2;
+			var vel:b2Vec2;
 			
-			bloodBuffer.fillRect(bloodBuffer.rect, 0);
-			
-			for (var i:int = 0; i < 4; i++) {
-				bloodFirst = Particle.create(bloodFirst, 150, 150);
-				bloodFirst.dx = Math.random()*2-1;
-				bloodFirst.dy = Math.random()*2-1;
+			for each (var spawner:ParticleSpawn in spawners) {
+				pos = spawner.body.GetWorldPoint(spawner.position);
+				pos.Multiply(m_physScale*2);
+				vel = spawner.body.GetLinearVelocityFromLocalPoint(spawner.position);
+				vel.Multiply(-0.05);
+				vel.x += Math.random()*2-1;
+				vel.y += Math.random()*2-1;
+				
+				var count:int = Math.random()*3;
+				
+				for (var i:int = 0; i < count; i++) {
+					bloodFirst = Particle.create(bloodFirst, pos.x, pos.y);
+					bloodFirst.dx = vel.x;
+					bloodFirst.dy = vel.y;
+				}
 			}
 			
 			var p:Particle;
@@ -308,7 +474,7 @@ import net.flashpunk.*;
 				p.x += p.dx;
 				p.y += p.dy;
 				
-				if (p.x < -10 || p.x > 310 || p.y < -10 || p.y > 310 || p.age > 199) {
+				if (p.x < -10 || p.x > 310 || p.y < -10 || p.y > 310 || p.age > 79) {
 					var next: Particle = p.next;
 					
 					if (p == bloodFirst) {
@@ -343,12 +509,13 @@ import net.flashpunk.*;
 					p.dy *= 1.0 - Math.min(0.9, 0.01*p.dy*p.dy)*Math.random();
 				}*/
 				
-				FP.point.x = p.x //+ waterImage.x;
-				FP.point.y = p.y //+ waterImage.y;
+				p.dx *= 0.99;
+				p.dy *= 0.99;
 				
-				//bloodImages[int(p.age / 25)].render(FP.point, FP.camera);
+				FP.point.x = p.x + bloodOffset.x;
+				FP.point.y = p.y + bloodOffset.y;
 				
-				bloodBuffer.copyPixels(bloodImages[int(p.age / 25)]._buffer, bloodImages[int(p.age / 25)]._bufferRect, FP.point, null, null, true);
+				bloodBuffer.copyPixels(bloodImages[int(p.age / 10)]._buffer, bloodImages[int(p.age / 10)]._bufferRect, FP.point, null, null, true);
 				
 				p = p.next;
 			}
@@ -365,19 +532,22 @@ import net.flashpunk.*;
 			
 			var p:Number = Math.random() * 8 + 1;
 			
+			var a:Number = borderSize * 0.5 * 0.75 / m_physScale;
+			var b:Number = 10.0 - a;
+			
 			var angle:Number  = 0;
 			
 			switch (i) {
-				case 0: bd.position.Set(0.0, p); break;
-				case 1: bd.position.Set(p, 0.0); break;
-				case 2: bd.position.Set(10.0, p); break;
-				case 3: bd.position.Set(p, 10.0); break;
+				case 0: bd.position.Set(a, p); break;
+				case 1: bd.position.Set(p, a); break;
+				case 2: bd.position.Set(b, p); break;
+				case 3: bd.position.Set(p, b); break;
 			}
 			
 			angle += Math.PI*0.5*i;
 			angle += (Math.random() - 0.5);
 			
-			body = m_world.CreateBody(bd);
+			//body = m_world.CreateBody(bd);
 			
 			var length:Number = 1 + Math.random()*3;
 			
@@ -395,18 +565,18 @@ import net.flashpunk.*;
 			filter.categoryBits = 0x0002;
 			filter.maskBits = 0x0001;
 			filter.groupIndex = -1;
-			var fixture:b2Fixture = body.CreateFixture2(polygon);
-			fixture.SetFilterData(filter);
+			//var fixture:b2Fixture = body.CreateFixture2(polygon);
+			//fixture.SetFilterData(filter);
 			
-			TweenLite.delayedCall(4, function ():void {
+			TweenLite.delayedCall(0.5, function ():void {
 				if (dead) return;
-				m_world.DestroyBody(body);
+				//m_world.DestroyBody(body);
 				
 				bd.type = b2Body.b2_staticBody;
 				
 				var to:b2Vec2 = bd.position.Copy();
-				bd.position.x -= Math.cos(angle) * (length + 1);
-				bd.position.y -= Math.sin(angle) * (length + 1);
+				bd.position.x -= Math.cos(angle) * (length);
+				bd.position.y -= Math.sin(angle) * (length);
 				
 				body = m_world.CreateBody(bd);
 			
@@ -414,6 +584,8 @@ import net.flashpunk.*;
 				
 				swords.push(fixture);
 				swordCount++;
+				
+				makeSwordImage(verts, body);
 				
 				var t:Object = {p: 0};
 				
@@ -427,7 +599,7 @@ import net.flashpunk.*;
 					body.SetPosition(p);
 				}
 				
-				TweenLite.to(t, 0.5, {p: 1, ease: Quad.easeIn, onUpdate: update, onComplete: function ():void {
+				TweenLite.to(t, 4.5, {p: 1, ease: Quad.easeIn, delay: 3.0, onUpdate: update, onComplete: function ():void {
 					if (dead) return;
 					TweenLite.to(t, 2, {p: 0, ease: Quad.easeOut, delay: 10, onUpdate: update, onComplete: function ():void {
 						if (dead) return;
@@ -453,6 +625,7 @@ import net.flashpunk.*;
 		
 		public var swords:Array = [];
 		public var swordCount:int = 0;
+		public var spawners:Array = [];
 	}
 	
 }
@@ -465,6 +638,12 @@ import Box2D.Dynamics.Joints.*;
 import Box2D.Dynamics.Contacts.*;
 import Box2D.Common.*;
 import Box2D.Common.Math.*;
+
+class ParticleSpawn
+{
+	public var body:b2Body;
+	public var position:b2Vec2;
+}
 
 class ContactListener extends b2ContactListener
 {
@@ -483,7 +662,23 @@ class ContactListener extends b2ContactListener
 		if (swords.indexOf(fixtureA) == -1 && swords.indexOf(fixtureB) == -1) {
 			return;
 		}
-			
+		
+		var limb:b2Body = (swords.indexOf(fixtureA) == -1) ? fixtureA.GetBody() : fixtureB.GetBody();
+		
+		/*var jointData:b2JointEdge = limb.GetJointList();
+		
+		if (! jointData) return;
+		
+		var a:Array = [];
+		
+		while (jointData) {
+			a.push(jointData.joint);
+			jointData = jointData.next;	
+		}
+		
+		for each (var j:b2Joint in a) {
+			test.m_world.DestroyJoint(j);
+		}*/
 
 		var manifold:b2WorldManifold = new b2WorldManifold();
 		contact.GetWorldManifold(manifold);
@@ -494,8 +689,10 @@ class ContactListener extends b2ContactListener
 		n1.Multiply(-20);
 		n2.Multiply(20);
 		
-		fixtureA.GetBody().ApplyImpulse(n1, manifold.m_points[0]);
-		fixtureB.GetBody().ApplyImpulse(n2, manifold.m_points[0]);
+		var p:b2Vec2 = manifold.m_points[0];
+		
+		fixtureA.GetBody().ApplyImpulse(n1, p);
+		fixtureB.GetBody().ApplyImpulse(n2, p);
 	
 		
 		if (test.m_mouseJoint) {
@@ -503,6 +700,12 @@ class ContactListener extends b2ContactListener
 			test.m_mouseJoint = null;
 			test.m_mouseAllowed = false;
 		}
+		
+		
+		var spawner:ParticleSpawn = new ParticleSpawn;
+		spawner.body = limb;
+		spawner.position = limb.GetLocalPoint(p);
+		test.spawners.push(spawner);
 	
 		
 		test.dead = true;

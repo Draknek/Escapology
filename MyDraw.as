@@ -31,13 +31,9 @@ import flash.display.Sprite;
 		* Draw a solid closed polygon provided in CCW order.
 		*/
 		/*public override function DrawSolidPolygon(vertices:Vector.<b2Vec2>, vertexCount:int, color:b2Color) : void{
-			if (vertexCount == 4) {
-				super.DrawSolidPolygon(vertices, vertexCount, color)
-				return;
-			}
-			m_sprite.graphics.lineStyle(m_lineThickness, 0xDDDDDD);
+			m_sprite.graphics.lineStyle(m_lineThickness, 0x0);
 			m_sprite.graphics.moveTo(vertices[0].x * m_drawScale, vertices[0].y * m_drawScale);
-			m_sprite.graphics.beginFill(0xAAAAAA);
+			m_sprite.graphics.beginFill((vertexCount == 4) ? 0x0 : 0xededed);
 			for (var i:int = 1; i < vertexCount; i++){
 					m_sprite.graphics.lineTo(vertices[i].x * m_drawScale, vertices[i].y * m_drawScale);
 			}

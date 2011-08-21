@@ -16,13 +16,15 @@ package
 		private static const BG_COLOR:uint = 0x000000;
 		private static const FG_COLOR:uint = 0xFFFFFF;
 		
-		[Embed(source = 'fonts/pixelhugger.ttf', fontFamily = 'default')]
+		[Embed(source = 'fonts/miama_regular.ttf', fontFamily = 'default')]
 		private static const FONT:Class;
 		
 		
 		
 		// Ignore everything else
 		
+		
+		public static var stage:Stage;
 		
 		
 		private var progressBar: Shape;
@@ -37,6 +39,8 @@ package
 		
 		public function Preloader ()
 		{
+			Preloader.stage = this.stage;
+			
 			sw = stage.stageWidth;
 			sh = stage.stageHeight;
 			
@@ -63,7 +67,7 @@ package
 			text.textColor = FG_COLOR;
 			text.selectable = false;
 			text.mouseEnabled = false;
-			text.defaultTextFormat = new TextFormat("default", 16);
+			text.defaultTextFormat = new TextFormat("default", 32);
 			text.embedFonts = true;
 			text.autoSize = "left";
 			text.text = "0%";

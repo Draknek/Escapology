@@ -3,26 +3,28 @@ package
 	import flash.display.*;
 	import flash.text.*;
 	
+	import flash.filters.*;
+	
 	public class MyTextField extends TextField
 	{
-		[Embed(source="fonts/pixelhugger.ttf", fontName='pixelhugger', mimeType='application/x-font')]
-		public static var PixelHuggerFontSrc : Class;
+		[Embed(source="fonts/miama_regular.ttf", fontName='default2', mimeType='application/x-font')]
+		public static var FontSrc : Class;
 		
-		public static var pixelHuggerFont : Font = new PixelHuggerFontSrc();
+		public static var embedFont : Font = new FontSrc();
 		
 		public function MyTextField (_x: Number, _y: Number, _text: String, _align: String = TextFieldAutoSize.CENTER, textSize: Number = 16, _fontName: String = null)
 		{
 			x = _x;
 			y = _y;
 			
-			textColor = 0xFFFFFF;
+			textColor = 0xFF0000;
 			
 			selectable = false;
 			mouseEnabled = false;
 			
 			if (! _fontName)
 			{
-				_fontName = pixelHuggerFont.fontName;
+				_fontName = embedFont.fontName;
 			}
 			
 			var _textFormat : TextFormat = new TextFormat(_fontName, textSize);
@@ -45,6 +47,15 @@ package
 			{
 				x = _x - textWidth;
 			}
+			
+			var outline:GlowFilter = new GlowFilter();
+			outline.blurX = outline.blurY = 2;
+			outline.color = 0xededed;
+			outline.quality = BitmapFilterQuality.HIGH;
+			outline.strength = 100;
+
+			filters = [outline];
+
 			
 		}
 		

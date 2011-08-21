@@ -38,6 +38,8 @@ package{
 	
 	public class Test {
 		
+		public var dbgSprite:Sprite;
+		
 		public function Test(){
 			
 			m_sprite = Main.m_sprite;
@@ -58,13 +60,12 @@ package{
 			m_world.SetWarmStarting(true);
 			// set debug draw
 			var dbgDraw:b2DebugDraw = new MyDraw();
-			//var dbgSprite:Sprite = new Sprite();
-			//m_sprite.addChild(dbgSprite);
-			dbgDraw.SetSprite(m_sprite);
+			dbgSprite = new Sprite();
+			dbgDraw.SetSprite(dbgSprite);
 			dbgDraw.SetDrawScale(30);
 			dbgDraw.SetFillAlpha(0.3);
 			dbgDraw.SetLineThickness(1.0);
-			dbgDraw.SetFlags(b2DebugDraw.e_shapeBit);
+			dbgDraw.SetFlags(b2DebugDraw.e_shapeBit|b2DebugDraw.e_jointBit);
 			m_world.SetDebugDraw(dbgDraw);
 			
 			// Create border of boxes

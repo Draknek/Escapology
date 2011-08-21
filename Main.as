@@ -30,18 +30,30 @@ import flash.text.*;
 import General.*
 
 import flash.display.MovieClip;
-	[SWF(width='300', height='300', backgroundColor='#292C2C', frameRate='30')]
+	[SWF(width='300', height='300', backgroundColor='#ededed', frameRate='30')]
 	public class Main extends MovieClip{
+		[Embed(source="images/bg.png")]
+		public static var BG: Class;
 		public function Main() {
 			addEventListener(Event.ADDED_TO_STAGE, onStage);
 		}
 		
 		public function onStage(e:Event):void{
+			sitelock(["draknek.org", "flashgamelicense.com"]);
+			
 			addEventListener(Event.ENTER_FRAME, update, false, 0, true);
 			
 			m_fpsCounter.x = 7;
 			m_fpsCounter.y = 5;
-			//addChildAt(m_fpsCounter, 0);
+			addChildAt(m_fpsCounter, 0);
+			
+			//addChild(new BG);
+			
+			var s:Sprite = new Sprite;
+			s.graphics.beginFill(0xededed);
+			s.graphics.drawRect(0, 0, 300, 300);
+			
+			addChild(s);
 			
 			m_sprite = new Sprite();
 			addChild(m_sprite);
@@ -83,6 +95,28 @@ public function removeChildrenOf(mc:*):void{
 		}
 	}
 }
+		
+		public function sitelock (allowed:*):Boolean
+		{
+			var url:String = Preloader.stage.loaderInfo.url;
+			var startCheck:int = url.indexOf('://' ) + 3;
+			
+			if (url.substr(0, startCheck) == 'file://') return true;
+			
+			var domainLen:int = url.indexOf('/', startCheck) - startCheck;
+			var host:String = url.substr(startCheck, domainLen);
+			
+			if (allowed is String) allowed = [allowed];
+			for each (var d:String in allowed)
+			{
+				if (host.substr(-d.length, d.length) == d) return true;
+			}
+			
+			parent.removeChild(this);
+			throw new Error("Error: this game is sitelocked");
+			
+			return false;
+		}
 
 		
 		

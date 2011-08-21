@@ -51,11 +51,12 @@ import net.flashpunk.*;
 		public var bloodImages: Vector.<Image> = new Vector.<Image>(8, true);
 		public var bloodOffset:Point = new Point;
 		
-		public var bloodBuffer:BitmapData = new BitmapData(300, 300, true, 0);
-		public var bloodBufferRect:Rectangle = new Rectangle(0, 0, 300, 300);
+		public var bloodBuffer:BitmapData = new BitmapData(320, 320, true, 0);
+		public var bloodBufferRect:Rectangle = new Rectangle(0, 0, 320, 300);
 		public var colorTransform: ColorTransform = new ColorTransform(1, 1, 1, 0.97);
 		
 		public static var borderSize:Number = 10;
+		public static var borderOffset:Number = 10;
 		
 		public var swordLayer:Sprite = new Sprite;
 		
@@ -400,6 +401,7 @@ import net.flashpunk.*;
 			updatePositions();
 			
 			var tmp:Bitmap = new Bitmap(bloodBuffer);
+			tmp.x = tmp.y = -10;
 			
 			//tmp.alpha = 0.8;
 			
@@ -411,7 +413,7 @@ import net.flashpunk.*;
 			
 		}
 		
-		public var timer:int = 0;
+		public var timer:int = 60;
 		
 		public var dead:Boolean = false;
 		
@@ -461,8 +463,8 @@ import net.flashpunk.*;
 				pos.Multiply(m_physScale*2);
 				vel = spawner.body.GetLinearVelocityFromLocalPoint(spawner.position);
 				vel.Multiply(-0.01 - Math.random()*0.1)
-				vel.x += Math.random()*0.5-0.25;
-				vel.y += Math.random()*0.5-0.25;
+				vel.x += Math.random()*1-0.5;
+				vel.y += Math.random()*1-0.5;
 				
 				var count:int = Math.random()*3;
 				
@@ -520,8 +522,8 @@ import net.flashpunk.*;
 				p.dx *= 0.99;
 				p.dy *= 0.99;
 				
-				FP.point.x = p.x //+ bloodOffset.x;
-				FP.point.y = p.y //+ bloodOffset.y;
+				FP.point.x = p.x +borderOffset//+ bloodOffset.x;
+				FP.point.y = p.y +borderOffset//+ bloodOffset.y;
 				
 				//bloodBuffer.copyPixels(bloodImages[int(p.age / 5)]._buffer, bloodImages[int(p.age / 10)]._bufferRect, FP.point, null, null, true);
 				
@@ -722,8 +724,10 @@ class ContactListener extends b2ContactListener
 		spawner.body = limb;
 		spawner.position = limb.GetLocalPoint(p);
 		test.spawners.push(spawner);
-	
 		
-		test.dead = true;
+		if (! test.dead) {
+			Audio.play("die");
+			test.dead = true;
+		}
 	}
 }

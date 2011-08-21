@@ -30,26 +30,29 @@ import flash.text.*;
 import General.*
 
 import flash.display.MovieClip;
-	[SWF(width='300', height='300', backgroundColor='#ededed', frameRate='30')]
 	public class Main extends MovieClip{
 		[Embed(source="images/bg.png")]
 		public static var BG: Class;
 		public function Main() {
 			addEventListener(Event.ADDED_TO_STAGE, onStage);
+			x=10;
+			y=10;
 		}
 		
 		public function onStage(e:Event):void{
 			sitelock(["draknek.org", "flashgamelicense.com"]);
 			
+			Audio.init(this);
+			
 			addEventListener(Event.ENTER_FRAME, update, false, 0, true);
 			
 			m_fpsCounter.x = 7;
 			m_fpsCounter.y = 5;
-			addChildAt(m_fpsCounter, 0);
 			
 			//addChild(new BG);
 			
 			var s:Sprite = new Sprite;
+			//s.graphics.beginFill(0x999999);
 			s.graphics.beginFill(0xededed);
 			s.graphics.drawRect(0, 0, 300, 300);
 			
@@ -59,6 +62,7 @@ import flash.display.MovieClip;
 			addChild(m_sprite);
 			// input
 			m_input = new Input(m_sprite);
+			//addChild(m_fpsCounter);
 		}
 		
 		public function update(e:Event):void{

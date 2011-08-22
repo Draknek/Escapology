@@ -117,7 +117,7 @@ import net.flashpunk.*;
 		}
 		
 		public function Game(){
-			text = new MyTextField(150, 50, "", TextFieldAutoSize.CENTER, 80);
+			text = new MyTextField(150, 50, "", TextFieldAutoSize.CENTER, 96);
 			
 			var circ:b2CircleShape; 
 			var box:b2PolygonShape;
@@ -437,7 +437,7 @@ import net.flashpunk.*;
 			updateBlood();
 			
 			if (dead) {
-				text.text = swordCount + "\nR to retry";
+				text.text = swordCount + " sword" + ((swordCount != 1) ? "s" : "");
 				m_world.DrawDebugData();
 				return;
 			}
@@ -699,6 +699,8 @@ import Box2D.Dynamics.Contacts.*;
 import Box2D.Common.*;
 import Box2D.Common.Math.*;
 
+import flash.events.*;
+
 class ParticleSpawn
 {
 	public var body:b2Body;
@@ -770,6 +772,17 @@ class ContactListener extends b2ContactListener
 		if (! test.dead) {
 			Audio.play("die");
 			test.dead = true;
+			
+			var playButton:Button = new Button("Replay", 50);
+			playButton.x = 150 - playButton.width*0.5;
+			playButton.y = 150;
+			
+			playButton.addEventListener(MouseEvent.CLICK, function (event: MouseEvent): void {
+				Main.removeChildrenOf(test.m_sprite);
+				Main.m_currTest = new Game();
+			});
+			
+			test.m_sprite.addChild(playButton);
 		}
 	}
 }

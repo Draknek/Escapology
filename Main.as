@@ -24,19 +24,26 @@ import Box2D.Collision.Shapes.*
 import Box2D.Dynamics.Joints.*
 import Box2D.Dynamics.Contacts.*
 import Box2D.Common.Math.*
-import flash.events.Event;
+import flash.events.*;
 import flash.display.*;
 import flash.text.*;
 import General.*
 
 import flash.display.MovieClip;
 	public class Main extends MovieClip{
-		[Embed(source="images/bg.png")]
-		public static var BG: Class;
+		[Embed(source="images/menu.png")]
+		public static var MENU: Class;
+		
+		public static var instance:Main;
+		
+		public var menu:Sprite;
+		
 		public function Main() {
 			addEventListener(Event.ADDED_TO_STAGE, onStage);
 			x=10;
 			y=10;
+			
+			instance = this;
 		}
 		
 		public function onStage(e:Event):void{
@@ -63,24 +70,37 @@ import flash.display.MovieClip;
 			// input
 			m_input = new Input(m_sprite);
 			//addChild(m_fpsCounter);
+			
+			menu = new Sprite;
+			
+			var menuBG:Bitmap = new MENU;
+			
+			menuBG.x = menuBG.y = -10;
+			
+			menu.addChild(menuBG);
+			
+			addChild(menu);
+			
+			var playButton:Button = new Button("Play", 50);
+			playButton.x = 150 - playButton.width*0.5;
+			playButton.y = 150;
+			
+			playButton.addEventListener(MouseEvent.CLICK, function (event: MouseEvent): void {
+				removeChild(menu);
+				m_currTest = new Game();
+			});
+			
+			menu.addChild(playButton);
 		}
 		
 		public function update(e:Event):void{
 			// clear for rendering
 			m_sprite.graphics.clear()
 			
-			if (Input.isKeyPressed(82)){ // R
-				m_currTest = null
-			}
-			
-			// if null, set new test
-			if (!m_currTest){
-				removeChildrenOf(m_sprite);
-				m_currTest = new Game();
-			}
-			
 			// update current test
-			m_currTest.Update();
+			if (m_currTest) {
+				m_currTest.Update();
+			}
 			
 			// Update input (last)
 			Input.update();
@@ -90,7 +110,7 @@ import flash.display.MovieClip;
 			FRateLimiter.limitFrame(30);
 			
 		}
-public function removeChildrenOf(mc:*):void{
+public static function removeChildrenOf(mc:*):void{
 	if(mc.numChildren!=0){
 		var k:int = mc.numChildren;
 		while( k -- )

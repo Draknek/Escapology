@@ -146,7 +146,7 @@ import net.flashpunk.*;
 				fixtureDef.density = 1.0;
 				fixtureDef.friction = 0.4;
 				fixtureDef.restitution = 0.3;
-				bd.position.Set(startX / m_physScale, startY / m_physScale);
+				bd.position.Set(startX / m_physScale, (startY+5) / m_physScale);
 				var head:b2Body = m_world.CreateBody(bd);
 				head.CreateFixture(fixtureDef);
 				//if (i == 0){

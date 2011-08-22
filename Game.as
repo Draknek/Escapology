@@ -601,7 +601,6 @@ import net.flashpunk.*;
 				var fixture:b2Fixture = body.CreateFixture2(polygon);
 				
 				swords.push(fixture);
-				swordCount++;
 				
 				makeSwordImage(verts, body);
 				
@@ -617,7 +616,12 @@ import net.flashpunk.*;
 					body.SetPosition(p);
 				}
 				
-				TweenLite.to(t, 4.5, {p: 1, ease: Quad.easeIn, delay: 3.0, onUpdate: update, onComplete: function ():void {
+				TweenLite.to(t, 4.5, {p: 1, ease: Quad.easeIn, delay: 3.0, onStart: function ():void {
+					
+					if (dead) return;
+					swordCount++;
+					Audio.play("scrape");
+				}, onUpdate: update, onComplete: function ():void {
 					if (dead) return;
 					TweenLite.to(t, 2, {p: 0, ease: Quad.easeOut, delay: 10, onUpdate: update, onComplete: function ():void {
 						if (dead) return;

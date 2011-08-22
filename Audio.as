@@ -20,6 +20,8 @@ package
 		[Embed(source="audio/mp3/die8.mp3")] public static var Die8Sfx:Class;
 		[Embed(source="audio/mp3/die9.mp3")] public static var Die9Sfx:Class;
 		[Embed(source="audio/mp3/die10.mp3")] public static var Die10Sfx:Class;
+		[Embed(source="audio/mp3/die11.mp3")] public static var Die11Sfx:Class;
+		[Embed(source="audio/mp3/scrape.mp3")] public static var ScrapeSfx:Class;
 		
 		private static var sounds:Object = {};
 		
@@ -31,6 +33,7 @@ package
 		
 		public static function init (o:InteractiveObject):void
 		{
+			FP.randomizeSeed();
 			// Setup
 			
 			so = SharedObject.getLocal("audio");
@@ -47,9 +50,11 @@ package
 			
 			// Create sounds
 			
-			for (var i:int = 1; i <= 10; i++) {
+			for (var i:int = 1; i <= 11; i++) {
 				sounds["die" + i] = new Sfx(Audio["Die"+i+"Sfx"]);
 			}
+			
+			sounds["scrape"] = new Sfx(ScrapeSfx);
 		}
 		
 		public static function play (sound:String):void
@@ -58,7 +63,7 @@ package
 			
 			if (sound == "die") {
 				if (dieShuffle.length == 0) {
-					dieShuffle.push(1,2,3,4,5,6,7,8,9,10);
+					dieShuffle.push(1,2,3,4,5,6,7,8,9,10,11);
 					FP.shuffle(dieShuffle);
 				}
 				
@@ -66,7 +71,13 @@ package
 			}
 			
 			if (sounds[sound]) {
-				sounds[sound].play();
+				var volume:Number = 1.0;
+				
+				if (sound == "scrape") {
+					volume = 0.5 + Math.random()*0.1;
+				}
+				
+				sounds[sound].play(volume);
 			}
 		}
 		

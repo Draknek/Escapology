@@ -154,11 +154,11 @@ package{
 		// Update mouseWorld
 		//======================
 		public function UpdateMouseWorld():void{
-			mouseXWorldPhys = (Input.mouseX)/m_physScale*0.5; 
-			mouseYWorldPhys = (Input.mouseY)/m_physScale*0.5; 
+			mouseXWorldPhys = (Input.mouseX-10)/m_physScale*0.5; 
+			mouseYWorldPhys = (Input.mouseY-10)/m_physScale*0.5; 
 			
-			mouseXWorld = (Input.mouseX); 
-			mouseYWorld = (Input.mouseY); 
+			mouseXWorld = (Input.mouseX-10); 
+			mouseYWorld = (Input.mouseY-10); 
 		}
 		
 		

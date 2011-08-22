@@ -91,6 +91,17 @@ import flash.display.MovieClip;
 			});
 			
 			menu.addChild(playButton);
+			
+			var ss:StyleSheet = new StyleSheet();
+			ss.parseCSS("a:hover { text-decoration: underline; } a { text-decoration: none; color: #000000; }");
+
+			var credits:MyTextField = new MyTextField(150, 120, "", "center", 25);
+			credits.htmlText = '<a href="http://www.draknek.org/?ref=ssitb" target="_blank">By Alan Hazelden</a>';
+			
+			credits.mouseEnabled = true;
+			credits.styleSheet = ss;
+			
+			menu.addChild(credits);
 		}
 		
 		public function update(e:Event):void{

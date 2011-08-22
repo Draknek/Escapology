@@ -117,6 +117,8 @@ import net.flashpunk.*;
 		}
 		
 		public function Game(){
+			Mochi.startPlay();
+			
 			text = new MyTextField(150, 50, "", TextFieldAutoSize.CENTER, 96);
 			
 			var circ:b2CircleShape; 
@@ -783,6 +785,18 @@ class ContactListener extends b2ContactListener
 			});
 			
 			test.m_sprite.addChild(playButton);
+			
+			var submitButton:Button = new Button("Submit score", 50);
+			submitButton.x = 150 - submitButton.width*0.5;
+			submitButton.y = 210;
+			
+			submitButton.addEventListener(MouseEvent.CLICK, function (event: MouseEvent): void {
+				Mochi.submitScore(test.swordCount);
+			});
+			
+			test.m_sprite.addChild(submitButton);
+			
+			Mochi.endPlay();
 		}
 	}
 }

@@ -51,6 +51,8 @@ import flash.display.MovieClip;
 			
 			Audio.init(this);
 			
+			Mochi.connect(this, "608d2cfee4df5e76", [11, 4, 4, 4, 8, 2, 1, 6, 0, 15, 2, 9, 7, 11, 9, 14]);
+			
 			addEventListener(Event.ENTER_FRAME, update, false, 0, true);
 			
 			m_fpsCounter.x = 7;
@@ -91,6 +93,16 @@ import flash.display.MovieClip;
 			});
 			
 			menu.addChild(playButton);
+			
+			var submitButton:Button = new Button("High scores", 50);
+			submitButton.x = 150 - submitButton.width*0.5;
+			submitButton.y = 210;
+			
+			submitButton.addEventListener(MouseEvent.CLICK, function (event: MouseEvent): void {
+				Mochi.showScores();
+			});
+			
+			menu.addChild(submitButton);
 			
 			var ss:StyleSheet = new StyleSheet();
 			ss.parseCSS("a:hover { text-decoration: underline; } a { text-decoration: none; color: #000000; }");

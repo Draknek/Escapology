@@ -34,6 +34,7 @@ import com.greensock.easing.*;
 import flash.display.*;
 import flash.geom.*;
 import flash.text.*;
+import flash.utils.*;
 import net.flashpunk.graphics.*;
 import net.flashpunk.*;
 	
@@ -411,9 +412,13 @@ import net.flashpunk.*;
 			
 			m_sprite.addChild(text);
 			
+			startTime = getTimer();
+			
 		}
 		
 		public var timer:int = 60;
+		public var startTime:int = 0;
+		public var totalTime:Number = 0;
 		
 		public var dead:Boolean = false;
 		
@@ -437,6 +442,8 @@ import net.flashpunk.*;
 				return;
 			}
 			
+			totalTime = (getTimer() - startTime) * 0.001;
+			
 			super.Update();
 			
 			updatePositions();
@@ -444,7 +451,15 @@ import net.flashpunk.*;
 			if (timer < 0){
 				addSword();
 				
-				timer = 45 + Math.random()*30;
+				var delay:int = 4*30;
+				
+				if (totalTime > 10) {
+					delay -= (totalTime - 10)*5;
+					
+					if (delay < 45) delay = 45;
+				}
+				
+				timer = delay + Math.random()*30;
 			}
 			
 			timer--;
@@ -616,14 +631,37 @@ import net.flashpunk.*;
 					body.SetPosition(p);
 				}
 				
-				TweenLite.to(t, 4.5, {p: 1, ease: Quad.easeIn, delay: 3.0, onStart: function ():void {
+				var warningTime:Number = 3.0;
+				
+				if (warningTime > 30) {
+					warningTime -= (totalTime - 30) * 0.05;
+					if (warningTime < 2.0) warningTime = 2.0;
+				}
+				
+				var slideInTime:Number = 4.5;
+				
+				if (totalTime > 40) {
+					slideInTime -= (totalTime - 40) * 0.05;
+					if (slideInTime < 3.0) slideInTime = 3.0;
+				}
+				
+				var stillTime:Number = 0.0;
+				
+				if (totalTime > 20) {
+					stillTime = (totalTime - 20) * 0.05;
+					if (stillTime > 20) stillTime = 20;
+				}
+				
+				var slideOutTime:Number = 2.0;
+				
+				TweenLite.to(t, slideInTime, {p: 1, ease: Quad.easeIn, delay: warningTime, onStart: function ():void {
 					
 					if (dead) return;
 					swordCount++;
 					Audio.play("scrape");
 				}, onUpdate: update, onComplete: function ():void {
 					if (dead) return;
-					TweenLite.to(t, 2, {p: 0, ease: Quad.easeOut, delay: 10, onUpdate: update, onComplete: function ():void {
+					TweenLite.to(t, slideOutTime*2, {p: -1, ease: Quad.easeOut, delay: stillTime, onUpdate: update, onComplete: function ():void {
 						if (dead) return;
 						remove(swords, fixture);
 						m_world.DestroyBody(body);
